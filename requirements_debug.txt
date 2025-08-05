@@ -1,0 +1,14 @@
+# 简化的 requirements.txt 用于调试 Serverless 启动问题
+# 只包含 RunPod 必要的基础包
+
+runpod>=1.4.0
+
+# 基础 Python 包
+numpy>=1.25.0
+Pillow==10.1.0
+
+# 如果需要视频处理功能，可以后续添加
+# moviepy==2.0.0
+# opencv-python-headless==4.8.1.78
+# imageio==2.31.5
+# imageio-ffmpeg==0.4.9
