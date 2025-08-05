@@ -22,15 +22,15 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         
-    - name: Build and push minimal version
+    - name: Build and push official version
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: ./Dockerfile.minimal
+        file: ./Dockerfile.official
         platforms: linux/amd64
         push: true
         tags: |
-          ${{ secrets.DOCKER_USERNAME }}/video-generation-serverless:minimal
+          ${{ secrets.DOCKER_USERNAME }}/video-generation-serverless:official
           ${{ secrets.DOCKER_USERNAME }}/video-generation-serverless:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
