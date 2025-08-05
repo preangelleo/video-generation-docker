@@ -374,9 +374,12 @@ def handle_add_subtitles_portrait(input_data: Dict[str, Any]) -> Dict[str, Any]:
         cleanup_temp_files(*temp_files)
 
 if __name__ == "__main__":
-    # 在 RunPod Serverless 环境中启动
-    if os.environ.get('RUNPOD_ENDPOINT_ID'):
+    # 检查是否在 RunPod 环境中
+    if os.environ.get('RUNPOD_ENDPOINT_ID') or os.environ.get('RUNPOD_JOB_ID') or 'runpod' in os.environ.get('HOSTNAME', '').lower():
         print("🚀 Starting RunPod Serverless Handler...")
+        print(f"🔧 Environment: RUNPOD_ENDPOINT_ID={os.environ.get('RUNPOD_ENDPOINT_ID')}")
+        print(f"🔧 Environment: RUNPOD_JOB_ID={os.environ.get('RUNPOD_JOB_ID')}")
+        print(f"🔧 Environment: HOSTNAME={os.environ.get('HOSTNAME')}")
         runpod.serverless.start({"handler": handler})
     else:
         # 本地测试
