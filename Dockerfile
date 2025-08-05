@@ -1,5 +1,5 @@
 # Multi-stage build for Video Generation Flask API
-FROM nvidia/cuda:11.8-devel-ubuntu22.04
+FROM nvidia/cuda:11.8-runtime-ubuntu22.04
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
