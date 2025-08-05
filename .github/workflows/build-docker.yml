@@ -22,15 +22,15 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         
-    - name: Build and push
+    - name: Build and push debug version
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: ./Dockerfile.serverless
+        file: ./Dockerfile.debug
         platforms: linux/amd64
         push: true
         tags: |
+          ${{ secrets.DOCKER_USERNAME }}/video-generation-serverless:debug
           ${{ secrets.DOCKER_USERNAME }}/video-generation-serverless:latest
-          ${{ secrets.DOCKER_USERNAME }}/video-generation-serverless:v1.0.0
         cache-from: type=gha
         cache-to: type=gha,mode=max
