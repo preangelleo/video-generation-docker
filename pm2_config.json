@@ -1,0 +1,23 @@
+{
+  "apps": [
+    {
+      "name": "video-generation-api",
+      "script": "python3",
+      "args": "app.py",
+      "cwd": "/workspace/video_generation",
+      "env": {
+        "OUTPUT_DIR": "${OUTPUT_DIR}",
+        "TEMP_DIR": "${TEMP_DIR}",
+        "RUNPOD_POD_ID": "${RUNPOD_POD_ID}"
+      },
+      "error_file": "/workspace/video_generation/logs/pm2-error.log",
+      "out_file": "/workspace/video_generation/logs/pm2-out.log",
+      "log_file": "/workspace/video_generation/logs/pm2-combined.log",
+      "time": true,
+      "autorestart": true,
+      "max_restarts": 10,
+      "restart_delay": 4000,
+      "watch": false
+    }
+  ]
+}
