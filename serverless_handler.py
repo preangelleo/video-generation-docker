@@ -22,19 +22,19 @@ from core_functions import (
     add_subtitles_to_video_portrait
 )
 
-def handler(event):
+def handler(job):
     """
     RunPod Serverless Handler 主函数
     
     Args:
-        event: RunPod 事件对象，包含 'input' 键
+        job: RunPod 作业对象，包含 'input' 键
         
     Returns:
         处理结果
     """
     try:
         # 获取输入数据
-        input_data = event.get("input", {})
+        input_data = job.get("input", {})
         endpoint = input_data.get("endpoint", "")
         
         print(f"🚀 Serverless Handler 开始处理: {endpoint}")
@@ -384,11 +384,11 @@ if __name__ == "__main__":
     else:
         # 本地测试
         print("🧪 Local Testing Mode")
-        test_event = {
+        test_job = {
             "input": {
                 "endpoint": "health"
             }
         }
         
-        result = handler(test_event)
+        result = handler(test_job)
         print(json.dumps(result, indent=2, ensure_ascii=False))
