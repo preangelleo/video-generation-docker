@@ -275,6 +275,25 @@ If not specified, font size is auto-calculated based on video resolution:
 - 10GB+ free disk space
 - GPU (optional, for faster processing)
 
+## 🎬 Output Examples
+
+See what this API can generate:
+
+**English Example**:
+[![English Video Example](https://img.youtube.com/vi/JiWsyuyw1ao/maxresdefault.jpg)](https://www.youtube.com/watch?v=JiWsyuyw1ao)
+
+**Chinese Example**:
+[![Chinese Video Example](https://img.youtube.com/vi/WYFyUAk9F6k/maxresdefault.jpg)](https://www.youtube.com/watch?v=WYFyUAk9F6k)
+
+**Features Demonstrated**:
+- ✅ Professional subtitles with semi-transparent background
+- ✅ Smooth zoom effects (Ken Burns effect)
+- ✅ Perfect audio-visual synchronization
+- ✅ High-quality 1080p video output
+- ✅ Support for both English and Chinese
+
+Both examples were generated using the "Full Featured" mode with subtitles and effects enabled.
+
 ## 🐳 Docker Image Details
 
 The image includes:

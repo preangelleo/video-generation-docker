@@ -57,6 +57,25 @@ curl -X POST http://localhost:5000/create_video_onestep \
 curl http://localhost:5000/download/{file_id} -o output.mp4
 ```
 
+## 🎬 输出效果展示
+
+看看这个 API 能生成什么样的视频：
+
+**英文示例**：
+[![英文视频示例](https://img.youtube.com/vi/JiWsyuyw1ao/maxresdefault.jpg)](https://www.youtube.com/watch?v=JiWsyuyw1ao)
+
+**中文示例**：
+[![中文视频示例](https://img.youtube.com/vi/WYFyUAk9F6k/maxresdefault.jpg)](https://www.youtube.com/watch?v=WYFyUAk9F6k)
+
+**展示的特性**：
+- ✅ 专业字幕（带半透明背景）
+- ✅ 流畅的缩放特效（Ken Burns 效果）
+- ✅ 完美的音画同步
+- ✅ 高质量 1080p 视频输出
+- ✅ 支持中英双语
+
+以上示例均使用"完整功能"模式生成，启用了字幕和特效。
+
 ## 应用场景
 
 - 📚 教育视频制作
