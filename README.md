@@ -1,5 +1,7 @@
 # Video Generation API v1.0
 
+[中文版](./README_CN.md)
+
 🎬 A powerful Docker-based API for intelligent video generation with professional effects and subtitles.
 
 ## 🚀 Quick Start
