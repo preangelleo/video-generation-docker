@@ -32,14 +32,6 @@ RUN mkdir -p /usr/share/fonts/truetype/lxgw && \
     "https://github.com/lxgw/LxgwWenKai/releases/download/v1.320/LXGWWenKai-Bold.ttf" && \
     fc-cache -fv
 
-# Install Lexend font
-RUN mkdir -p /usr/share/fonts/truetype/lexend && \
-    wget -O /usr/share/fonts/truetype/lexend/Lexend-Regular.ttf \
-    "https://fonts.gstatic.com/s/lexend/v18/wlptgwvFAVdoq2_v9KSe2A.ttf" && \
-    wget -O /usr/share/fonts/truetype/lexend/Lexend-Bold.ttf \
-    "https://fonts.gstatic.com/s/lexend/v18/wlpvgwvFAVdoq2_v9KKm-tXY.ttf" && \
-    fc-cache -fv
-
 # Create working directory
 WORKDIR /workspace/video_generation
 

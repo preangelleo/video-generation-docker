@@ -36,39 +36,39 @@ def get_output_filename(prefix, input_path, output_ext=".mp4"):
 
 def get_local_font(language='chinese'):
     """
-    根据运行环境和语言返回合适的字体名称
+    Get appropriate font name based on environment and language
     
     Args:
-        language (str): 语言类型，'chinese'（默认）或 'english'
+        language (str): Language type, 'chinese' (default) or 'english'
     
     Returns:
-        str: 字体名称或字体文件路径
+        str: Font name or font file path
     """
     import subprocess
     if language.lower() == 'english':
-        # 英文使用Ubuntu字体
+        # Use Ubuntu font for English
         font_name = "Ubuntu"
     else:
-        # 中文优先使用霞鹜文楷 Bold
-        # 所有系统都优先检查霞鹜文楷
+        # Chinese: prioritize LXGW WenKai Bold
+        # All systems prioritize checking LXGW WenKai
         if which_ubuntu in ['TB', 'AWS', 'RunPod']:
-            # Linux系统 - 先检查系统是否安装了霞鹜文楷
+            # Linux systems - check if LXGW WenKai is installed
             
             try:
                 result = subprocess.run(['fc-list', ':family'], capture_output=True, text=True)
                 if 'LXGW WenKai' in result.stdout:
-                    # 系统已安装，返回字体名称（不是路径）
+                    # System has installed font, return font name (not path)
                     return "LXGW WenKai Bold"
             except:
                 pass
             
-            # 检查字体文件是否存在
+            # Check if font files exist
             font_paths = [
-                # 最优先：霞鹜文楷 Bold
+                # Top priority: LXGW WenKai Bold
                 "/usr/share/fonts/truetype/lxgw/LXGWWenKai-Bold.ttf",
                 "/usr/local/share/fonts/LXGWWenKai-Bold.ttf",
                 "/home/ubuntu/.local/share/fonts/LXGWWenKai-Bold.ttf",
-                # 备选：思源黑体
+                # Backup: Source Han fonts
                 "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
                 "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
                 "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
@@ -76,27 +76,27 @@ def get_local_font(language='chinese'):
             ]
             for path in font_paths:
                 if os.path.exists(path):
-                    # 如果是霞鹜文楷，返回字体名称而不是路径
+                    # If LXGW WenKai, return font name instead of path
                     if 'lxgw' in path.lower() or 'LXGWWenKai' in path:
                         return "LXGW WenKai Bold"
                     else:
-                        # 其他字体返回路径
+                        # Other fonts return path
                         return path
-            # 如果没找到中文字体，返回Ubuntu作为后备
+            # If no Chinese font found, use Ubuntu as fallback
             font_name = "Ubuntu"
         else:
-            # Mac系统 - 也优先使用霞鹜文楷
-            # 先检查系统是否安装了霞鹜文楷
+            # Mac systems - also prioritize LXGW WenKai
+            # First check if system has LXGW WenKai installed
             try:
                 result = subprocess.run(['fc-list', ':family'], capture_output=True, text=True)
-                if 'LXGW WenKai' in result.stdout or '霞鹜文楷' in result.stdout:
-                    # 系统已安装，直接使用字体名称
+                if 'LXGW WenKai' in result.stdout or 'LXGW' in result.stdout:
+                    # System has installed font, use font name directly
                     font_name = "LXGW WenKai"
                     return font_name
             except:
                 pass
             
-            # 如果系统没有安装，检查本地字体文件
+            # If system doesn't have it, check local font files
             mac_font_paths = [
                 "/Library/Fonts/LXGWWenKai-Bold.ttf",
                 os.path.expanduser("~/Library/Fonts/LXGWWenKai-Bold.ttf")
@@ -104,15 +104,15 @@ def get_local_font(language='chinese'):
             
             for path in mac_font_paths:
                 if os.path.exists(path):
-                    # 如果是系统字体目录，返回字体名称而不是路径
+                    # If in system font directory, return font name instead of path
                     if path.startswith("/Library/Fonts/") or path.startswith(os.path.expanduser("~/Library/Fonts/")):
                         font_name = "LXGW WenKai"
                         return font_name
                     else:
-                        # 项目内的字体文件，返回路径
+                        # Project font files, return path
                         return path
             
-            # 如果没找到霞鹜文楷，使用默认的思源黑体
+            # If LXGW WenKai not found, use default Noto Sans CJK
             font_name = "Noto Sans CJK SC"
     
     return font_name
@@ -185,7 +185,7 @@ class AfterEffectsProcess:
             if effects and isinstance(effects, list) and len(effects) > 0:
                 # Priority 1: Random selection from provided effects list
                 chosen_effect = random.choice(effects)
-                # 移除冗余的特效选择日志
+                # Remove redundant effect selection logging
                 # if progress_callback:
                 #     progress_callback(f"Selected '{chosen_effect}' from effects list: {effects}")
             elif effect and effect != "random":
@@ -194,7 +194,7 @@ class AfterEffectsProcess:
             else:
                 # Priority 3: Random from all available effects
                 chosen_effect = random.choice([e for e in EFFECTS if e != "random"])
-            # 移除冗余的特效应用日志
+            # Remove redundant effect application logging
             # if progress_callback:
             #     progress_callback(f"Applying effect '{chosen_effect}' to {os.path.basename(source_path)}")
             temp_out_path = None
@@ -216,7 +216,7 @@ class AfterEffectsProcess:
                 clip = VideoFileClip(temp_out_path)
                 if original_audio:
                     clip = clip.with_audio(original_audio)
-                    # if progress_callback:  # 清理冗余日志
+                    # if progress_callback:  # Clean up redundant logging
                     #     progress_callback("Audio restored from original video")
                         
             elif chosen_effect in ("pan_left", "pan_right"):
@@ -235,7 +235,7 @@ class AfterEffectsProcess:
                 clip = VideoFileClip(temp_out_path)
                 if original_audio:
                     clip = clip.with_audio(original_audio)
-                    # if progress_callback:  # 清理冗余日志
+                    # if progress_callback:  # Clean up redundant logging
                     #     progress_callback("Audio restored from original video")
             w, h = clip.size
             
@@ -243,7 +243,7 @@ class AfterEffectsProcess:
             if w > h:
                 # Landscape: use 16:9 aspect ratio
                 aspect = 16 / 9
-                # 移除冗余的格式检测日志
+                # Remove redundant format detection logging
                 # if progress_callback:
                 #     progress_callback(f"Detected landscape format ({w}x{h}), using 16:9 aspect ratio")
             else:
@@ -273,10 +273,10 @@ class AfterEffectsProcess:
                     if progress_callback:
                         progress_callback(f"Cropping height from {h} to {new_h} pixels")
             else:
-                # 移除冗余的aspect ratio日志
+                # Remove redundant aspect ratio logging
                 # if progress_callback:
                 #     progress_callback(f"Video already has correct aspect ratio ({current_aspect:.3f}), no cropping needed")
-                pass  # 需要pass语句来满足Python语法要求
+                pass  # Need pass statement for Python syntax
             if effects:
                 clip = clip.with_effects(effects)
             
@@ -296,11 +296,11 @@ class AfterEffectsProcess:
                 if progress_callback:
                     progress_callback("Watermark added successfully")
             
-            # 写入视频文件，确保音频为48kHz
+            # Write video file with 48kHz audio
             clip.write_videofile(output_path, 
                                 codec='libx264', 
                                 audio_codec='aac', 
-                                audio_fps=48000,  # 48kHz采样率
+                                audio_fps=48000,  # 48kHz sample rate
                                 audio_bitrate='128k',
                                 threads=2, 
                                 logger=None)
@@ -330,19 +330,19 @@ class AfterEffectsProcess:
             Path to created video file or None if failed
         """
         try:
-            # if progress_callback:  # 清理冗余日志
+            # if progress_callback:  # Clean up redundant logging
             #     progress_callback(f"Loading image: {os.path.basename(input_image)}")
             
             # Load audio to get duration
             audio_clip = AudioFileClip(input_audio)
-            # 强制重采样到48kHz以符合YouTube标准
+            # Force resample to 48kHz for YouTube standard
             if audio_clip.fps != 48000:
-                # if progress_callback:  # 清理冗余日志
+                # if progress_callback:  # Clean up redundant logging
                 #     progress_callback(f"Resampling audio from {audio_clip.fps}Hz to 48000Hz...")
                 audio_clip = audio_clip.with_fps(48000)
             audio_duration = audio_clip.duration
             
-            # if progress_callback:  # 清理冗余日志
+            # if progress_callback:  # Clean up redundant logging
             #     progress_callback(f"Audio duration: {audio_duration:.2f} seconds")
             
             # Create video clip from image with audio duration
@@ -363,11 +363,11 @@ class AfterEffectsProcess:
             if progress_callback:
                 progress_callback("Creating video from image and audio...")
             
-            # 🎯 GPU编码器检测和选择 - 使用直接FFmpeg调用而非MoviePy
+            # 🎯 GPU encoder detection and selection - Use direct FFmpeg instead of MoviePy
             if progress_callback:
                 progress_callback("Detecting optimal video encoder (GPU/CPU)...")
             
-            # 测试h264_nvenc编码器是否可用
+            # Test if h264_nvenc encoder is available
             encoder_test_cmd = ['ffmpeg', '-hide_banner', '-f', 'lavfi', '-i', 'nullsrc=s=256x256:d=0.1', '-c:v', 'h264_nvenc', '-f', 'null', '-']
             use_gpu_encoding = False
             try:
@@ -384,27 +384,27 @@ class AfterEffectsProcess:
                     progress_callback(f"⚠️  GPU test failed - using MoviePy with libx264: {str(e)[:100]}")
             
             if use_gpu_encoding:
-                # 使用直接FFmpeg调用进行GPU编码
+                # Use direct FFmpeg call for GPU encoding
                 if progress_callback:
                     progress_callback("Creating video with direct FFmpeg GPU encoding...")
                 
-                # 构建FFmpeg命令
+                # Build FFmpeg command
                 ffmpeg_cmd = [
                     'ffmpeg', '-y', '-loglevel', 'quiet',
                     '-loop', '1', '-i', input_image,
                     '-i', input_audio,
-                    '-c:v', 'h264_nvenc',           # GPU编码器
-                    '-preset', 'p4',                # NVENC预设
-                    '-cq:v', '19',                  # 质量因子
-                    '-c:a', 'aac',                  # 音频编码器
-                    '-af', 'aresample=48000',       # 音频重采样滤镜
-                    '-ar', '48000',                 # 48kHz采样率
-                    '-ac', '2',                     # 立体声
-                    '-b:a', '128k',                 # 音频比特率
-                    '-pix_fmt', 'yuv420p',          # 像素格式
-                    '-r', '30',                     # 帧率
-                    '-shortest',                    # 以最短流为准
-                    '-vsync', 'cfr',                # 固定帧率
+                    '-c:v', 'h264_nvenc',           # GPU encoder
+                    '-preset', 'p4',                # NVENC preset
+                    '-cq:v', '19',                  # Quality factor
+                    '-c:a', 'aac',                  # Audio encoder
+                    '-af', 'aresample=48000',       # Audio resample filter
+                    '-ar', '48000',                 # 48kHz sample rate
+                    '-ac', '2',                     # Stereo
+                    '-b:a', '128k',                 # Audio bitrate
+                    '-pix_fmt', 'yuv420p',          # Pixel format
+                    '-r', '30',                     # Frame rate
+                    '-shortest',                    # Use shortest stream
+                    '-vsync', 'cfr',                # Constant frame rate
                     temp_video_path
                 ]
                 
@@ -415,7 +415,7 @@ class AfterEffectsProcess:
                 if progress_callback:
                     progress_callback("✅ Direct FFmpeg GPU encoding completed")
             else:
-                # 回退到MoviePy的CPU编码
+                # Fallback to MoviePy CPU encoding
                 if progress_callback:
                     progress_callback("Using MoviePy CPU encoding fallback...")
                 
@@ -424,7 +424,7 @@ class AfterEffectsProcess:
                     'codec': 'libx264',
                     'audio_codec': 'aac',
                     'audio_bitrate': '128k',
-                    'audio_fps': 48000,  # 48kHz采样率（YouTube标准）
+                    'audio_fps': 48000,  # 48kHz sample rate (YouTube standard)
                     'preset': 'medium',
                     'threads': 2,
                     'logger': None
@@ -555,7 +555,7 @@ class AfterEffectsProcess:
             M = cv2.getRotationMatrix2D(center, 0, zoom)
             frame_zoomed = cv2.warpAffine(frame, M, (w, h), flags=cv2.INTER_LANCZOS4)
             writer.write(frame_zoomed)
-            # 移除冗余的zoom进度日志，已经很稳定了
+            # Remove redundant zoom progress logging - already stable
             # if progress_callback and (i == 0 or i == total_frames // 2 or i == total_frames - 1):
             #     progress_callback(f"Zoom progress: {int((i+1) * 100 / total_frames)}%")
         cap.release()
@@ -610,7 +610,7 @@ class AfterEffectsProcess:
             if crop.shape[1] != crop_w or crop.shape[0] != crop_h:
                 crop = cv2.resize(crop, (crop_w, crop_h), interpolation=cv2.INTER_LANCZOS4)
             writer.write(crop)
-            # 只在开始、中间和结束时打印进度
+            # Only print progress at start, middle and end
             if progress_callback and (i == 0 or i == total_frames // 2 or i == total_frames - 1):
                 progress_callback(f"Pan progress: {int((i+1) * 100 / total_frames)}%")
         cap.release()
@@ -619,11 +619,11 @@ class AfterEffectsProcess:
 
 def merge_audio_image_to_video_with_effects(input_mp3, input_image, output_video=None, effects: list = ["zoom_in", "zoom_out"], watermark_path=None) -> tuple[bool, str]:
     """
-    Merges an MP3 audio file and a static image into a video file with effects and watermark.
+    Merges an audio file and a static image into a video file with effects and watermark.
     Uses the tested AfterEffectsProcess class for all processing.
     
     Args:
-        input_mp3 (str): Path to the input MP3 file.
+        input_mp3 (str): Path to the input audio file (MP3, WAV, M4A supported).
         input_image (str): Path to the input image file (e.g., JPG, PNG).
         output_video (str): Path for the output video file (e.g., MP4).
         effects (list, optional): List of effects to randomly choose from. Default: ["zoom_in", "zoom_out"]
@@ -633,18 +633,18 @@ def merge_audio_image_to_video_with_effects(input_mp3, input_image, output_video
         tuple[bool, str]: (success_status, output_path_or_error_message)
     """
     try:
-        # 首先将所有路径转换为绝对路径
+        # First convert all paths to absolute paths
         input_mp3 = os.path.abspath(input_mp3)
         input_image = os.path.abspath(input_image)
         
         if not output_video: output_video = input_mp3.replace('.mp3', '.mp4')
         output_video = os.path.abspath(output_video)
         
-        # 确保输出目录存在
+        # Ensure output directory exists
         output_dir = os.path.dirname(output_video)
         if not os.path.exists(output_dir): os.makedirs(output_dir, exist_ok=True)
         
-        # 检查是否已经存在输出文件
+        # Check if output file already exists
         if os.path.isfile(output_video): return True, output_video
 
         # Check if input files exist
@@ -666,7 +666,7 @@ def merge_audio_image_to_video_with_effects(input_mp3, input_image, output_video
             effects=effects,
             watermark_path=watermark_path,
             skip_existed=False,  # Always process for this function
-            progress_callback=print  # 使用print函数作为progress_callback以显示GPU/CPU信息
+            progress_callback=print  # Use print function as progress_callback to show GPU/CPU info
         )
         
         if result: # Move result to expected output path if different
@@ -686,20 +686,20 @@ def add_subtitles_to_video(input_video_path: str, subtitle_path: str, output_vid
             if not force_redo: return print(f"Output video already exists at {output_video_path}")
             else: os.remove(output_video_path)
         
-        # 获取字体信息
+        # Get font information
         font_info = get_local_font(language)
         font_dir = ""
         font_name = font_info
         
-        # 如果返回的是文件路径，提取字体目录和字体名称
+        # If returned value is file path, extract font directory and name
         if isinstance(font_info, str) and os.path.exists(font_info) and font_info.endswith('.ttf'):
             font_dir = os.path.dirname(font_info)
             font_name = os.path.basename(font_info).replace('.ttf', '')
         elif isinstance(font_info, str) and '/' not in font_info:
-            # 如果是字体名称（如 "Ubuntu"），直接使用
+            # If it's a font name (like "Ubuntu"), use directly
             font_name = font_info
         
-        # 获取视频信息
+        # Get video information
         video_info = {}
         try:
             cmd = f'ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0:s=x "{input_video_path}"'
@@ -709,152 +709,152 @@ def add_subtitles_to_video(input_video_path: str, subtitle_path: str, output_vid
                 video_info['width'] = video_width
                 video_info['height'] = video_height
                 
-                # 根据视频分辨率计算合适的字体大小，如果没有提供
+                # Calculate appropriate font size based on video resolution if not provided
                 if not font_size:
-                    # 根据1080p视频20号字体为基准进行等比例计算，然后减小20%
+                    # Based on 1080p video with 20pt font as reference, then reduced by 20%
                     base_height = 1080
-                    base_font_size = 16  # 原来20，减小20%后为16
+                    base_font_size = 16  # Originally 20, reduced 20% to 16
                     calculated_font_size = int(video_height / base_height * base_font_size)
-                    # 设置最小和最大字体大小限制，调整为更小的字体
-                    font_size = max(18, min(32, calculated_font_size))  # 最小18，最大32
+                    # Set minimum and maximum font size limits, adjusted to smaller fonts
+                    font_size = max(18, min(32, calculated_font_size))  # Min 18, Max 32
             
-            # 根据视频高度调整字幕位置
-            margin_v = 30  # 使用固定像素值，距离底部30像素
+            # Adjust subtitle position based on video height
+            margin_v = 30  # Use fixed pixel value, 30 pixels from bottom
         except Exception as e:
-            # 默认值
+            # Default values
             font_size = font_size or 20
             margin_v = 60
         
-        # 使用ass过滤器添加字幕 (ass格式比srt有更好的格式控制)
-        # 先将SRT转换为ASS格式
+        # Use ass filter to add subtitles (ass format has better format control than srt)
+        # First convert SRT to ASS format
         ass_path = subtitle_path.replace('.srt', '.ass')
         convert_cmd = f'ffmpeg -y -loglevel quiet -i "{subtitle_path}" "{ass_path}"'
         try:
-            # 执行SRT到ASS的转换
+            # Execute SRT to ASS conversion
             subprocess.run(convert_cmd, shell=True, check=True)
             
-            # 修改ASS文件，自定义样式
+            # Modify ASS file with custom styles
             if os.path.exists(ass_path):
                 try:
-                    # 读取文件内容
+                    # Read file content
                     with open(ass_path, 'r', encoding='utf-8') as f:
                         ass_content = f.read()
                     
-                    # 使用更精确的方式修改样式
-                    # 查找样式部分的行
+                    # Use more precise way to modify styles
+                    # Find style section lines
                     lines = ass_content.split('\n')
                     new_lines = []
                     
-                    # 添加一个标志来跟踪我们是否已修改样式部分
+                    # Add flag to track if we've modified the style section
                     modified_style = False
                     
-                    # 找到[V4+ Styles]部分并添加我们的自定义样式
+                    # Find [V4+ Styles] section and add our custom styles
                     in_style_section = False
                     
                     for i, line in enumerate(lines):
-                        # 检查是否进入样式部分
+                        # Check if entering style section
                         if '[V4+ Styles]' in line:
                             in_style_section = True
                             new_lines.append(line)
                             continue
                             
-                        # 检查是否离开样式部分
+                        # Check if leaving style section
                         if in_style_section and line.strip().startswith('['):
                             in_style_section = False
                             
-                        # 在样式部分中，如果进入了Format行（样式定义行）
+                        # In style section, if encountered Format line (style definition line)
                         if in_style_section and line.strip().startswith('Format:'):
                             new_lines.append(line)
                             continue
                             
-                        # 如果在样式部分中遇到Style:行，替换它
+                        # If encountered Style: line in style section, replace it
                         if in_style_section and line.strip().startswith('Style:'):
-                            # 提取样式名称
+                            # Extract style name
                             style_name = line.split(',')[0].strip().replace('Style:', '').strip()
                             
-                            # 根据参数设置背景框
+                            # Set background box based on parameters
                             if background_box:
-                                # ASS颜色格式测试：直接使用透明度值
-                                # 0x00 = 完全不透明, 0xFF = 完全透明
-                                alpha_value = int(background_opacity * 255)  # 直接使用透明度
+                                # ASS color format test: use transparency value directly
+                                # 0x00 = completely opaque, 0xFF = completely transparent
+                                alpha_value = int(background_opacity * 255)  # Use transparency directly
                                 alpha_hex = format(alpha_value, '02X')
-                                back_colour = f"&H{alpha_hex}000000"  # 透明度+黑色背景
+                                back_colour = f"&H{alpha_hex}000000"  # Transparency + black background
                                 border_style = 4  # BorderStyle=4 (opaque box)
-                                outline_width = 0  # 去掉描边，只保留背景框
-                                shadow_width = 0   # 阴影宽度
+                                outline_width = 0  # Remove outline, keep only background box
+                                shadow_width = 0   # Shadow width
                             else:
-                                back_colour = f"&H000000FF"  # 不透明红色背景，用于测试
-                                border_style = 1  # 只有描边，无背景框
-                                outline_width = 2  # 正常描边宽度
-                                shadow_width = 0   # 阴影宽度
+                                back_colour = f"&H000000FF"  # Opaque red background for testing
+                                border_style = 1  # Only outline, no background box
+                                outline_width = 2  # Normal outline width
+                                shadow_width = 0   # Shadow width
                             
-                            # 创建新的样式行，完全替换原有样式
-                            # 对齐值使用2表示底部对齐（ASS规范中）
-                            # 如果有字体文件路径，直接使用完整路径
+                            # Create new style line, completely replace original style
+                            # Alignment value 2 means bottom alignment (in ASS specification)
+                            # If there's font file path, use complete path directly
                             font_for_ass = font_info if (isinstance(font_info, str) and os.path.exists(font_info) and font_info.endswith('.ttf')) else font_name
-                            # 中文字体需要加粗
+                            # Chinese fonts need to be bold
                             bold_value = 1 if language.lower() == 'chinese' else 0
                             new_style = f"Style: {style_name},{font_for_ass},{font_size},&H00FFFFFF,&H00000000,{outline_color},{back_colour},{bold_value},0,0,0,100,100,0,0,{border_style},{outline_width},{shadow_width},2,10,10,{margin_v}"
                             new_lines.append(new_style)
                             modified_style = True
                             continue
                         
-                        # 对于其他行，保持不变
+                        # For other lines, keep unchanged
                         new_lines.append(line)
                     
-                    # 如果没有修改任何样式（异常情况）
+                    # If no style was modified (exceptional case)
                     if not modified_style:
-                        # 尝试直接在头部添加字体定义信息
+                        # Try to add font definition info directly in header
                         if '[Script Info]' in ass_content:
-                            # 根据参数设置背景框
+                            # Set background box based on parameters
                             if background_box:
                                 alpha_hex = format(int(background_opacity * 255), '02X')
                                 back_colour = f"&H{alpha_hex}000000"
                                 border_style = 4
-                                outline_width = 0  # 去掉描边，只保留背景框
-                                shadow_width = 0   # 阴影宽度
+                                outline_width = 0  # Remove outline, keep only background box
+                                shadow_width = 0   # Shadow width
                             else:
-                                back_colour = f"&H000000FF"  # 不透明红色背景，用于测试
+                                back_colour = f"&H000000FF"  # Opaque red background for testing
                                 border_style = 1
-                                outline_width = 2  # 正常描边宽度
-                                shadow_width = 0   # 阴影宽度
+                                outline_width = 2  # Normal outline width
+                                shadow_width = 0   # Shadow width
                             
-                            # 在Script Info后添加字体声明
-                            # 如果有字体文件路径，直接使用完整路径
+                            # Add font declaration after Script Info
+                            # If there's font file path, use complete path directly
                             font_for_ass = font_info if (isinstance(font_info, str) and os.path.exists(font_info) and font_info.endswith('.ttf')) else font_name
-                            # 中文字体需要加粗
+                            # Chinese fonts need to be bold
                             bold_value = 1 if language.lower() == 'chinese' else 0
                             style_section = f"\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\nStyle: Default,{font_for_ass},{font_size},&H00FFFFFF,&H00000000,{outline_color},{back_colour},{bold_value},0,0,0,100,100,0,0,{border_style},{outline_width},{shadow_width},2,10,10,{margin_v}\n"
                             ass_content = ass_content.replace('[Script Info]', f'[Script Info]{style_section}')
                     
-                    # 重新组合文件内容
+                    # Recombine file content
                     ass_content = '\n'.join(new_lines)
                     
-                    # 写回文件
+                    # Write back to file
                     with open(ass_path, 'w', encoding='utf-8') as f: f.write(ass_content)
                 except Exception as e: print(f"Failed to modify ASS file, will use original: {str(e)}")
         except: ass_path = subtitle_path
         
-        # 构建ffmpeg命令，使用字体和样式设置美化字幕
-        # 使用hwaccel尝试启用GPU加速
+        # Build ffmpeg command with font and style settings for beautiful subtitles
+        # Use hwaccel to attempt GPU acceleration
         if os.path.exists(ass_path) and ass_path.endswith('.ass'):
-            # 使用ASS字幕
+            # Use ASS subtitles
             if font_dir:
                 ffmpeg_cmd = f'ffmpeg -y -loglevel quiet -hwaccel auto -i "{input_video_path}" -vf "ass=\"{ass_path}\":fontsdir={font_dir}" -c:a copy "{output_video_path}"'
             else:
                 ffmpeg_cmd = f'ffmpeg -y -loglevel quiet -hwaccel auto -i "{input_video_path}" -vf "ass=\"{ass_path}\"" -c:a copy "{output_video_path}"'
         else:
-            # 回退到SRT字幕，指定字体大小和位置
-            # Alignment=2表示底部对齐（ASS规范中）
+            # Fallback to SRT subtitles, specify font size and position
+            # Alignment=2 means bottom alignment (in ASS specification)
             if font_dir:
                 ffmpeg_cmd = f'ffmpeg -y -loglevel quiet -hwaccel auto -i "{input_video_path}" -vf "subtitles=\"{subtitle_path}\":force_style=\'FontSize={font_size},FontName={font_name},MarginV={margin_v},PrimaryColour=&H00FFFFFF,OutlineColour={outline_color},BackColour=&H80000000,Bold=1,Italic=0,Alignment=2,MarginL=10,MarginR=10\':fontsdir={font_dir}" -c:v libx264 -preset medium -crf 23 -c:a copy "{output_video_path}"'
             else:
                 ffmpeg_cmd = f'ffmpeg -y -loglevel quiet -hwaccel auto -i "{input_video_path}" -vf "subtitles=\"{subtitle_path}\":force_style=\'FontSize={font_size},FontName={font_name},MarginV={margin_v},PrimaryColour=&H00FFFFFF,OutlineColour={outline_color},BackColour=&H80000000,Bold=1,Italic=0,Alignment=2,MarginL=10,MarginR=10\'" -c:v libx264 -preset medium -crf 23 -c:a copy "{output_video_path}"'
         
-        # 执行命令
+        # Execute command
         subprocess.run(ffmpeg_cmd, shell=True, check=True)
         
-        # 验证输出文件
+        # Verify output file
         if os.path.exists(output_video_path) and os.path.getsize(output_video_path) > 0: return True
         else: return False
             
@@ -870,21 +870,21 @@ def add_subtitles_to_video_portrait(input_video_path: str, subtitle_path: str, o
         if os.path.isfile(output_video_path):
             if not force_redo: return False
             else: os.remove(output_video_path)
-        # 获取字体信息
+        # Get font information
         font_info = get_local_font(language)
         font_dir = ""
         font_name = font_info
         
-        # 如果返回的是文件路径，提取字体目录和字体名称
+        # If returned value is file path, extract font directory and name
         if isinstance(font_info, str) and os.path.exists(font_info) and font_info.endswith('.ttf'):
             font_dir = os.path.dirname(font_info)
             font_name = os.path.basename(font_info).replace('.ttf', '')
         elif isinstance(font_info, str) and '/' not in font_info:
-            # 如果是字体名称（如 "Ubuntu"），直接使用
+            # If it's a font name (like "Ubuntu"), use directly
             font_name = font_info
         print(f"Testing with font: {font_name}, font_dir: {font_dir}")
         
-        # 获取视频信息
+        # Get video information
         video_info = {}
         try:
             cmd = f'ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0:s=x "{input_video_path}"'
@@ -895,23 +895,23 @@ def add_subtitles_to_video_portrait(input_video_path: str, subtitle_path: str, o
                 video_info['height'] = video_height
                 print(f"Video dimensions: {video_width}x{video_height}")
                 
-                # 检测视频是否为竖屏（宽高比小于1表示竖屏）
+                # Detect if video is portrait (aspect ratio < 1 means portrait)
                 is_portrait = video_width / video_height < 1
                 print(f"Video orientation: {'Portrait (9:16)' if is_portrait else 'Landscape'} ({video_width}x{video_height})")
                 
-                # 根据视频分辨率计算合适的字体大小，如果没有提供
-                # 字体大小计算 - 根据视频高度缩放
+                # Calculate appropriate font size based on video resolution if not provided
+                # Font size calculation - scale based on video height
                 if not font_size:
                     base_height = 1080
-                    # 对于竖屏，字体大小调整为适合的值，恢复原来的大小
+                    # For portrait, adjust font size to appropriate value, restore original size
                     if is_portrait:
-                        base_font_size = 33  # 恢复原来的33
-                        min_font = 22  # 从27调整为22，适应横屏的调整
-                        max_font = 39  # 恢复原来的39
+                        base_font_size = 33  # Restore original 33
+                        min_font = 22  # Adjusted from 27 to 22, adapted to landscape adjustment
+                        max_font = 39  # Restore original 39
                     else:
-                        base_font_size = 30  # 恢复原来的30
-                        min_font = 24  # 恢复原来的24
-                        max_font = 48  # 恢复原来的48
+                        base_font_size = 30  # Restore original 30
+                        min_font = 24  # Restore original 24
+                        max_font = 48  # Restore original 48
                     
                     calculated_font_size = int(video_height / base_height * base_font_size)
                     font_size = max(min_font, min(max_font, calculated_font_size))
@@ -919,91 +919,91 @@ def add_subtitles_to_video_portrait(input_video_path: str, subtitle_path: str, o
                 else:
                     print(f"Using provided font size for subtitles: {font_size}")
                 
-                # 根据视频方向调整字幕位置 - 放在底部25%位置
+                # Adjust subtitle position based on video orientation - place at bottom 25% position
                 if is_portrait:
-                    # 竖屏视频使用更合适的底部边距，对应于视频25%高度的位置
-                    margin_v = int(video_height * 0.25)  # 视频高度的25%
-                    margin_v = max(100, min(350, margin_v))  # 保证边距在合理范围内
+                    # Portrait videos use more appropriate bottom margin, corresponding to 25% of video height position
+                    margin_v = int(video_height * 0.25)  # 25% of video height
+                    margin_v = max(100, min(350, margin_v))  # Ensure margin is within reasonable range
                 else:
-                    margin_v = 60  # 横屏使用较小的固定边距
+                    margin_v = 60  # Landscape uses smaller fixed margin
                 print(f"Using margin_v: {margin_v} for {'portrait' if is_portrait else 'landscape'} video - positioned at bottom 25%")
             
-                # 设置描边宽度
+                # Set outline width
                 outline_width = 3.0 if is_portrait else 2.0
                 print(f"Using outline width: {outline_width} for {'portrait' if is_portrait else 'landscape'} video")
             
         except Exception as e:
             print(f"Failed to get video info: {str(e)}")
-            # 默认值，针对竖屏设置更小的默认值，也减小20%
-            font_size = font_size or 16  # 原来20，减小20%后为16
+            # Default values, set smaller default values for portrait, also reduced by 20%
+            font_size = font_size or 16  # Originally 20, reduced 20% to 16
             margin_v = 80
             outline_width = 2.5
         
-        # 使用ass过滤器添加字幕 (ass格式比srt有更好的格式控制)
-        # 先将SRT转换为ASS格式
+        # Use ass filter to add subtitles (ass format has better format control than srt)
+        # First convert SRT to ASS format
         ass_path = subtitle_path.replace('.srt', '.ass')
-        if ass_path == subtitle_path:  # 如果文件已经是.ass后缀，避免覆盖
+        if ass_path == subtitle_path:  # If file already has .ass suffix, avoid overwriting
             ass_path = subtitle_path + '.ass'
             
-        # 先删除现有的ASS文件，确保每次生成新的
+        # Delete existing ASS file first to ensure generating new one each time
         if os.path.exists(ass_path):
             os.remove(ass_path)
             print(f"Removed existing ASS file: {ass_path}")
             
-        # 转换SRT为ASS基础文件
+        # Convert SRT to ASS base file
         convert_cmd = f'ffmpeg -y -loglevel quiet -i "{subtitle_path}" "{ass_path}"'
         subprocess.run(convert_cmd, shell=True, check=True)
         
-        # 读取ASS内容
+        # Read ASS content
         with open(ass_path, 'r', encoding='utf-8') as f:
             ass_content = f.read()
         
-        # 添加自动换行设置到Script Info部分
-        play_res_x = int(video_width * 0.9)  # 设置为视频宽度的90%，碰到边缘自动换行
+        # Add automatic line wrapping settings to Script Info section
+        play_res_x = int(video_width * 0.9)  # Set to 90% of video width, auto wrap when hitting edges
         
-        # 创建新的Script Info部分，包含自动换行设置
+        # Create new Script Info section with automatic line wrapping settings
         new_script_info = """[Script Info]\nScriptType: v4.00+\nWrapStyle: 2\nPlayResX: {}\nPlayResY: {}\nScaledBorderAndShadow: yes\n\n""".format(play_res_x, video_height)
         
-        # 找到并替换[Script Info]部分
+        # Find and replace [Script Info] section
         if '[Script Info]' in ass_content:
             import re
             ass_content = re.sub(r'\[Script Info\][^\[]*', new_script_info, ass_content)
         
-        # 根据参数设置背景框
+        # Set background box based on parameters
         if background_box:
-            # ASS颜色格式：直接使用透明度值
-            alpha_value = int(background_opacity * 255)  # 直接使用透明度
+            # ASS color format: use transparency value directly
+            alpha_value = int(background_opacity * 255)  # Use transparency directly
             alpha_hex = format(alpha_value, '02X')
-            back_colour = f"&H{alpha_hex}000000"  # 透明度+黑色背景
+            back_colour = f"&H{alpha_hex}000000"  # Transparency + black background
             border_style = 4  # BorderStyle=4 (opaque box)
-            outline_width_final = 0  # 去掉描边，只保留背景框
-            shadow_width = 0   # 阴影宽度
+            outline_width_final = 0  # Remove outline, keep only background box
+            shadow_width = 0   # Shadow width
             print(f"Portrait background opacity: {background_opacity}, alpha_value: {alpha_value}, alpha_hex: {alpha_hex}")
         else:
-            back_colour = "&H80000000"  # 默认背景色
-            border_style = 1  # 只有描边，无背景框
-            outline_width_final = outline_width  # 使用原来的描边宽度
-            shadow_width = 1   # 阴影宽度
+            back_colour = "&H80000000"  # Default background color
+            border_style = 1  # Only outline, no background box
+            outline_width_final = outline_width  # Use original outline width
+            shadow_width = 1   # Shadow width
         
-        # 创建自定义样式
-        # 如果有字体文件路径，直接使用完整路径
+        # Create custom style
+        # If there's font file path, use complete path directly
         font_for_ass = font_info if (isinstance(font_info, str) and os.path.exists(font_info) and font_info.endswith('.ttf')) else font_name
         custom_style = f"Style: Default,{font_for_ass},{font_size},&H00FFFFFF,&H00000000,{outline_color},{back_colour},1,0,0,0,100,100,0,0,{border_style},{outline_width_final},{shadow_width},2,10,10,{margin_v}"
         
-        # 替换样式部分
+        # Replace style section
         if '[V4+ Styles]' in ass_content:
-            # 如果有样式部分，找到Style:行并替换
+            # If there's style section, find Style: line and replace
             style_pattern = r'Style: [^\n]*'
             if re.search(style_pattern, ass_content):
                 ass_content = re.sub(style_pattern, custom_style, ass_content)
             else:
-                # 如果没有Style行但有样式部分，添加我们的样式
+                # If no Style line but has style section, add our style
                 format_line = ass_content.find('Format:', ass_content.find('[V4+ Styles]'))
                 if format_line > 0:
                     insert_pos = ass_content.find('\n', format_line) + 1
                     ass_content = ass_content[:insert_pos] + custom_style + '\n' + ass_content[insert_pos:]
         else:
-            # 如果没有样式部分，添加完整的样式部分
+            # If no style section, add complete style section
             style_section = f"[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n{custom_style}\n\n"
             events_pos = ass_content.find('[Events]')
             if events_pos > 0:
@@ -1011,31 +1011,31 @@ def add_subtitles_to_video_portrait(input_video_path: str, subtitle_path: str, o
             else:
                 ass_content += '\n' + style_section
         
-        # 写回更新的ASS文件
+        # Write back updated ASS file
         with open(ass_path, 'w', encoding='utf-8') as f:
             f.write(ass_content)
         print(f"Created custom ASS file with auto line-wrap (PlayResX: {play_res_x}) and positioned at bottom 25% (margin_v={margin_v})")
         
         
-        # 构建ffmpeg命令，使用字体和样式设置美化字幕
-        # 使用hwaccel尝试启用GPU加速
+        # Build ffmpeg command with font and style settings for beautiful subtitles
+        # Use hwaccel to attempt GPU acceleration
         if os.path.exists(ass_path) and ass_path.endswith('.ass'):
-            # 使用ASS字幕
+            # Use ASS subtitles
             if font_dir:
                 ffmpeg_cmd = f'ffmpeg -y -loglevel quiet -hwaccel auto -i "{input_video_path}" -vf "ass=\"{ass_path}\":fontsdir={font_dir}" -c:a copy "{output_video_path}"'
             else:
                 ffmpeg_cmd = f'ffmpeg -y -loglevel quiet -hwaccel auto -i "{input_video_path}" -vf "ass=\"{ass_path}\"" -c:a copy "{output_video_path}"'
         else:
-            # 回退到SRT字幕，指定字体大小和位置，并增强描边以提高可读性
+            # Fallback to SRT subtitles, specify font size and position, enhance outline for better readability
             if font_dir:
                 ffmpeg_cmd = f'ffmpeg -y -loglevel quiet -hwaccel auto -i "{input_video_path}" -vf "subtitles=\"{subtitle_path}\":force_style=\'FontSize={font_size},FontName={font_name},MarginV={margin_v},PrimaryColour=&H00FFFFFF,OutlineColour={outline_color},BackColour=&H80000000,Bold=1,Italic=0,Alignment=2,MarginL=10,MarginR=10,Outline=3\':fontsdir={font_dir}" -c:v libx264 -preset medium -crf 23 -c:a copy "{output_video_path}"'
             else:
                 ffmpeg_cmd = f'ffmpeg -y -loglevel quiet -hwaccel auto -i "{input_video_path}" -vf "subtitles=\"{subtitle_path}\":force_style=\'FontSize={font_size},FontName={font_name},MarginV={margin_v},PrimaryColour=&H00FFFFFF,OutlineColour={outline_color},BackColour=&H80000000,Bold=1,Italic=0,Alignment=2,MarginL=10,MarginR=10,Outline=3\'" -c:v libx264 -preset medium -crf 23 -c:a copy "{output_video_path}"'
         
-        # 执行命令
+        # Execute command
         subprocess.run(ffmpeg_cmd, shell=True, check=True)
         
-        # 验证输出文件
+        # Verify output file
         if os.path.exists(output_video_path) and os.path.getsize(output_video_path) > 0:
             print(f"Successfully added subtitles to video: {output_video_path}")
             return True
@@ -1066,32 +1066,32 @@ def create_video_with_subtitles_onestep(
     progress_callback=None
 ) -> bool:
     """
-    一步完成图片+音频+字幕的视频生成
+    One-step completion of image + audio + subtitles video generation
     
-    参数:
-        input_image: 输入图片路径
-        input_audio: 输入音频路径
-        subtitle_path: 字幕文件路径 (SRT格式)
-        output_video: 输出视频路径
-        font_size: 字体大小 (可选，不提供则自动计算)
-        outline_color: 描边颜色
-        background_box: 是否显示背景框
-        background_opacity: 背景框透明度
-        language: 语言 (english/chinese)
-        is_portrait: 是否为竖屏视频
-        effects: 特效列表 (保留参数，暂不实现)
-        watermark_path: 水印图片路径
-        progress_callback: 进度回调函数
+    Args:
+        input_image: Input image path
+        input_audio: Input audio path
+        subtitle_path: Subtitle file path (SRT format)
+        output_video: Output video path
+        font_size: Font size (optional, auto-calculated if not provided)
+        outline_color: Outline color
+        background_box: Whether to show background box
+        background_opacity: Background box opacity
+        language: Language (english/chinese)
+        is_portrait: Whether it's a portrait video
+        effects: Effects list (reserved parameter, not implemented yet)
+        watermark_path: Watermark image path
+        progress_callback: Progress callback function
     
-    返回:
-        bool: 成功返回True，失败返回False
+    Returns:
+        bool: True if successful, False if failed
     """
     
     try:
         if progress_callback:
             progress_callback("Starting one-step video creation with subtitles...")
         
-        # 验证输入文件
+        # Verify input files
         if not os.path.exists(input_image):
             if progress_callback:
                 progress_callback(f"Error: Image file not found: {input_image}")
@@ -1102,14 +1102,14 @@ def create_video_with_subtitles_onestep(
                 progress_callback(f"Error: Audio file not found: {input_audio}")
             return False
             
-        # 检查字幕文件（如果需要字幕）
+        # Check subtitle file (if subtitles needed)
         has_subtitles = subtitle_path is not None and os.path.exists(subtitle_path)
         if subtitle_path is not None and not has_subtitles:
             if progress_callback:
                 progress_callback(f"Error: Subtitle file not found: {subtitle_path}")
             return False
         
-        # 获取字体信息
+        # Get font information
         font_info = get_local_font(language)
         font_dir = ""
         font_name = font_info
@@ -1120,57 +1120,57 @@ def create_video_with_subtitles_onestep(
         elif isinstance(font_info, str) and '/' not in font_info:
             font_name = font_info
         
-        # 获取视频分辨率（从图片）
+        # Get video resolution (from image)
         probe_cmd = f'ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0:s=x "{input_image}"'
         result = subprocess.check_output(probe_cmd, shell=True).decode('utf-8').strip()
         
         if result and 'x' in result:
             video_width, video_height = map(int, result.split('x'))
         else:
-            # 默认分辨率
+            # Default resolution
             video_width = 1920 if not is_portrait else 1080
             video_height = 1080 if not is_portrait else 1920
         
         if progress_callback:
             progress_callback(f"Video dimensions: {video_width}x{video_height}")
         
-        # 计算字体大小（如果未提供）
+        # Calculate font size (if not provided)
         if not font_size:
             base_height = 1080
             if is_portrait:
-                # 竖屏视频的字体计算
+                # Font calculation for portrait videos
                 if language.lower() == 'chinese':
-                    base_font_size = 21  # 中文竖屏基础字体
+                    base_font_size = 21  # Chinese portrait base font
                     min_font = 18
                     max_font = 39
                 else:
-                    base_font_size = 30  # 英文竖屏基础字体
+                    base_font_size = 30  # English portrait base font
                     min_font = 24
                     max_font = 48
             else:
-                # 横屏视频的字体计算
-                base_font_size = 16  # 减小20%后的基础字体
+                # Font calculation for landscape videos
+                base_font_size = 16  # Base font after 20% reduction
                 min_font = 18
                 max_font = 32
             
             calculated_font_size = int(video_height / base_height * base_font_size)
             font_size = max(min_font, min(max_font, calculated_font_size))
         
-        # 计算字幕边距
+        # Calculate subtitle margins
         if is_portrait:
-            margin_v = int(video_height * 0.25)  # 竖屏：底部25%位置
+            margin_v = int(video_height * 0.25)  # Portrait: bottom 25% position
             margin_v = max(100, min(350, margin_v))
         else:
-            margin_v = 30  # 横屏：固定30像素
+            margin_v = 30  # Landscape: fixed 30 pixels
         
-        # 设置描边宽度
+        # Set outline width
         outline_width = 3.0 if is_portrait else 2.0
         
-        # 检测GPU编码器
+        # Detect GPU encoder
         use_gpu_encoding = False
         gpu_encoder = 'libx264'
         
-        # 在RunPod环境检测GPU
+        # Detect GPU in RunPod environment
         if os.environ.get('RUNPOD_POD_ID') or which_ubuntu == 'RunPod':
             test_cmd = ['ffmpeg', '-hide_banner', '-f', 'lavfi', '-i', 'nullsrc=s=256x256:d=0.1', 
                        '-c:v', 'h264_nvenc', '-f', 'null', '-']
@@ -1184,39 +1184,39 @@ def create_video_with_subtitles_onestep(
             except:
                 pass
         
-        # 构建FFmpeg命令
+        # Build FFmpeg command
         cmd = [
             'ffmpeg', '-y', '-loglevel', 'error',
-            '-loop', '1', '-i', input_image,  # 图片输入
-            '-i', input_audio,                # 音频输入
+            '-loop', '1', '-i', input_image,  # Image input
+            '-i', input_audio,                # Audio input
         ]
         
-        # 添加视频滤镜
+        # Add video filters
         video_filters = []
         
-        # 缩放到目标分辨率
+        # Scale to target resolution
         video_filters.append(f"scale={video_width}:{video_height}:force_original_aspect_ratio=decrease")
         video_filters.append(f"pad={video_width}:{video_height}:(ow-iw)/2:(oh-ih)/2")
         video_filters.append("setsar=1")
         
-        # 只有在有字幕文件时才添加字幕滤镜
+        # Only add subtitle filter when subtitle file exists
         if has_subtitles:
-            # 根据背景框设置样式
+            # Set style based on background box parameters
             if background_box:
                 alpha_value = int(background_opacity * 255)
                 alpha_hex = format(alpha_value, '02X')
-                # ASS格式：BorderStyle=4表示背景框，Outline=0去掉描边
+                # ASS format: BorderStyle=4 means background box, Outline=0 removes outline
                 border_style = "BorderStyle=4,Outline=0"
                 back_colour = f"BackColour=&H{alpha_hex}000000"
             else:
-                # BorderStyle=1表示只有描边
+                # BorderStyle=1 means outline only
                 border_style = f"BorderStyle=1,Outline={outline_width}"
                 back_colour = "BackColour=&H80000000"
             
-            # 中文需要加粗
+            # Chinese text needs bold formatting
             bold_value = 1 if language.lower() == 'chinese' else 0
             
-            # 构建字幕样式字符串
+            # Build subtitle style string
             subtitle_style = (
                 f"FontName={font_name},"
                 f"FontSize={font_size},"
@@ -1225,34 +1225,34 @@ def create_video_with_subtitles_onestep(
                 f"{back_colour},"
                 f"Bold={bold_value},"
                 f"{border_style},"
-                f"Alignment=2,"  # 底部居中
+                f"Alignment=2,"  # Bottom center alignment
                 f"MarginV={margin_v}"
             )
             
-            # 如果有字体目录，添加fontsdir参数
+            # Add fontsdir parameter if font directory exists
             if font_dir:
                 subtitle_filter = f"subtitles='{subtitle_path}':force_style='{subtitle_style}':fontsdir='{font_dir}'"
             else:
                 subtitle_filter = f"subtitles='{subtitle_path}':force_style='{subtitle_style}'"
             
-            # 添加字幕滤镜
+            # Add subtitle filter
             video_filters.append(subtitle_filter)
         
-        # 处理滤镜组合
+        # Handle filter combination
         if watermark_path and os.path.exists(watermark_path):
-            # 有水印的情况，使用 -filter_complex
-            watermark_width = int(video_width / 8)  # 水印宽度为视频宽度的 1/8
+            # Case with watermark, use -filter_complex
+            watermark_width = int(video_width / 8)  # Watermark width is 1/8 of video width
             
             if video_filters:
-                # 有字幕和水印
+                # With both subtitles and watermark
                 video_filters_str = ",".join(video_filters)
-                # 使用 filter_complex 组合字幕和水印
+                # Use filter_complex to combine subtitles and watermark
                 filter_complex = f"[0:v]{video_filters_str}[v];movie={watermark_path},scale={watermark_width}:-1[watermark];[v][watermark]overlay=10:10"
                 cmd.extend([
                     '-filter_complex', filter_complex,
                 ])
             else:
-                # 只有水印，没有字幕
+                # Only watermark, no subtitles
                 filter_complex = f"movie={watermark_path},scale={watermark_width}:-1[watermark];[0:v][watermark]overlay=10:10"
                 cmd.extend([
                     '-filter_complex', filter_complex,
@@ -1261,23 +1261,23 @@ def create_video_with_subtitles_onestep(
             if progress_callback:
                 progress_callback(f"Adding watermark from: {watermark_path}")
         else:
-            # 没有水印的情况
+            # Case without watermark
             if video_filters:
-                # 只有字幕，使用 -vf
+                # Only subtitles, use -vf
                 video_filters_str = ",".join(video_filters)
                 cmd.extend([
                     '-vf', video_filters_str,
                 ])
         
         cmd.extend([
-            '-c:v', gpu_encoder,              # 视频编码器
+            '-c:v', gpu_encoder,              # Video encoder
         ])
         
-        # GPU编码参数
+        # GPU encoding parameters
         if use_gpu_encoding:
             cmd.extend([
-                '-preset', 'p4',              # NVENC预设
-                '-cq:v', '19',                # 质量因子
+                '-preset', 'p4',              # NVENC preset
+                '-cq:v', '19',                # Quality factor
             ])
         else:
             cmd.extend([
@@ -1285,25 +1285,25 @@ def create_video_with_subtitles_onestep(
                 '-crf', '23',
             ])
         
-        # 音频参数 - 确保48kHz输出
+        # Audio parameters - ensure 48kHz output
         cmd.extend([
-            '-c:a', 'aac',                    # 音频编码器
-            '-af', 'aresample=48000',         # 音频重采样滤镜
-            '-ar', '48000',                   # 48kHz采样率
-            '-ac', '2',                       # 立体声
-            '-b:a', '128k',                   # 音频比特率
-            '-pix_fmt', 'yuv420p',            # 像素格式
-            '-r', '30',                       # 帧率
-            '-shortest',                      # 以最短流为准
-            '-vsync', 'cfr',                  # 固定帧率
-            '-movflags', '+faststart',        # 优化流媒体播放
+            '-c:a', 'aac',                    # Audio encoder
+            '-af', 'aresample=48000',         # Audio resample filter
+            '-ar', '48000',                   # 48kHz sample rate
+            '-ac', '2',                       # Stereo
+            '-b:a', '128k',                   # Audio bitrate
+            '-pix_fmt', 'yuv420p',            # Pixel format
+            '-r', '30',                       # Frame rate
+            '-shortest',                      # Use shortest stream
+            '-vsync', 'cfr',                  # Constant frame rate
+            '-movflags', '+faststart',        # Optimize streaming playback
             output_video
         ])
         
         if progress_callback:
             progress_callback(f"Executing FFmpeg command with {gpu_encoder} encoder...")
         
-        # 执行命令
+        # Execute command
         result = subprocess.run(cmd, capture_output=True, text=True)
         
         if result.returncode != 0:
@@ -1311,7 +1311,7 @@ def create_video_with_subtitles_onestep(
                 progress_callback(f"FFmpeg error: {result.stderr}")
             return False
         
-        # 验证输出文件
+        # Verify output file
         if os.path.exists(output_video) and os.path.getsize(output_video) > 0:
             if progress_callback:
                 progress_callback(f"✅ Video created successfully: {output_video}")

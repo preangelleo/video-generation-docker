@@ -3,7 +3,7 @@ werkzeug==3.0.0
 moviepy==2.0.0
 opencv-python==4.8.1.78
 opencv-python-headless==4.8.1.78
-numpy>=1.25.0
+numpy==1.26.4
 Pillow==10.1.0
 imageio==2.31.5
 imageio-ffmpeg==0.4.9

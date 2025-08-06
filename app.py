@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Fixed Flask API for video processing with file download support
+Video Generation API with Authentication Support
+Secure Flask API for video processing with optional authentication
 """
 
 import os
@@ -8,10 +9,13 @@ import sys
 import base64
 import json
 import tempfile
+import re
 import shutil
 import uuid
 from datetime import datetime, timedelta
+from functools import wraps
 from flask import Flask, request, jsonify, send_file, url_for
+import subprocess
 
 # Add current directory to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -27,15 +31,67 @@ from core_functions import (
 # Create Flask app
 app = Flask(__name__)
 
-# Configure directories - adapt to both Mac and Linux environments
-if os.path.exists('/workspace'):
-    # RunPod environment
-    OUTPUT_DIR = os.environ.get('OUTPUT_DIR', '/workspace/video_generation/outputs')
-    TEMP_DIR = os.environ.get('TEMP_DIR', '/tmp/video_processing')
-else:
-    # Mac local environment
-    OUTPUT_DIR = os.environ.get('OUTPUT_DIR', './outputs')
-    TEMP_DIR = os.environ.get('TEMP_DIR', './temp')
+# Authentication Configuration
+DEFAULT_AUTH_KEY = "your-authentication-key-placeholder-uuid-here"
+
+def check_authentication():
+    """
+    Dual-compatible authentication check
+    - If AUTHENTICATION_KEY is placeholder value → Allow all requests (default mode)
+    - If AUTHENTICATION_KEY is custom value → Verify header (secure mode)
+    """
+    config_auth_key = os.getenv('AUTHENTICATION_KEY', DEFAULT_AUTH_KEY)
+    
+    # Default mode: using placeholder, no authentication required
+    if config_auth_key == DEFAULT_AUTH_KEY:
+        return True, "Default mode - open access"
+    
+    # Secure mode: verify header key
+    request_auth_key = request.headers.get('X-Authentication-Key')
+    if request_auth_key == config_auth_key:
+        return True, "Authenticated successfully"
+    else:
+        return False, "Invalid authentication key"
+
+def save_input_file(data, work_dir, filename):
+    """Save base64 encoded data or file path to disk"""
+    if not data:
+        raise ValueError(f"No data provided for {filename}")
+    
+    file_path = os.path.join(work_dir, filename)
+    
+    # If it's a file path
+    if isinstance(data, str) and os.path.exists(data):
+        shutil.copy(data, file_path)
+    else:
+        # Assume it's base64 encoded
+        try:
+            decoded_data = base64.b64decode(data)
+            with open(file_path, 'wb') as f:
+                f.write(decoded_data)
+        except Exception as e:
+            raise ValueError(f"Failed to decode base64 data for {filename}: {e}")
+    
+    return file_path
+
+
+def require_auth(f):
+    """Decorator: Add authentication check to API endpoints"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        is_authenticated, message = check_authentication()
+        if not is_authenticated:
+            return jsonify({
+                "error": "Authentication failed",
+                "message": message,
+                "required_header": "X-Authentication-Key"
+            }), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Configure directories - simple hardcoded paths for disposable Docker containers
+OUTPUT_DIR = './outputs'
+TEMP_DIR = './temp'
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(TEMP_DIR, exist_ok=True)
@@ -43,9 +99,44 @@ os.makedirs(TEMP_DIR, exist_ok=True)
 # Store file metadata (in production, use Redis or database)
 file_metadata = {}
 
+def detect_video_orientation(video_path):
+    """
+    Detect if video is portrait or landscape using ffprobe
+    Returns: True if portrait, False if landscape
+    """
+    try:
+        cmd = [
+            'ffprobe', '-v', 'error', 
+            '-select_streams', 'v:0',
+            '-show_entries', 'stream=width,height',
+            '-of', 'json',
+            video_path
+        ]
+        
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            app.logger.error(f"ffprobe failed: {result.stderr}")
+            return False
+            
+        data = json.loads(result.stdout)
+        if 'streams' in data and len(data['streams']) > 0:
+            width = int(data['streams'][0].get('width', 1920))
+            height = int(data['streams'][0].get('height', 1080))
+            
+            # Video is portrait if height > width
+            is_portrait = height > width
+            app.logger.info(f"Video dimensions: {width}x{height}, portrait: {is_portrait}")
+            return is_portrait
+        
+        return False
+        
+    except Exception as e:
+        app.logger.error(f"Error detecting video orientation: {e}")
+        return False
+
 @app.route('/health', methods=['GET'])
 def health_check():
-    """Health check endpoint"""
+    """Health check endpoint with authentication status"""
     try:
         import subprocess
         result = subprocess.run(['ffmpeg', '-version'], capture_output=True, text=True)
@@ -54,26 +145,46 @@ def health_check():
         # Check GPU
         gpu_available = os.path.exists('/dev/nvidia0')
         
-        return jsonify({
+        # Check authentication status
+        config_auth_key = os.getenv('AUTHENTICATION_KEY', DEFAULT_AUTH_KEY)
+        auth_mode = "default" if config_auth_key == DEFAULT_AUTH_KEY else "secure"
+        
+        response = {
             "status": "healthy",
             "ffmpeg_version": ffmpeg_version,
             "gpu_available": gpu_available,
             "output_dir": OUTPUT_DIR,
             "temp_dir": TEMP_DIR,
+            "authentication": {
+                "mode": auth_mode,
+                "description": "Open access - no authentication required" if auth_mode == "default" 
+                              else "Secure mode - X-Authentication-Key header required"
+            },
             "available_endpoints": [
                 "/create_video_onestep",
-                "/merge_audio_image", 
-                "/add_subtitles",
-                "/add_subtitles_portrait",
-                "/download/<file_id>"
+                "/download/<file_id>",
+                "/cleanup"
             ]
-        })
+        }
+        
+        if auth_mode == "secure":
+            response["authentication"]["required_header"] = "X-Authentication-Key"
+            
+        return jsonify(response)
     except Exception as e:
         return jsonify({"status": "error", "error": str(e)}), 500
 
 @app.route('/create_video_onestep', methods=['POST'])
+@require_auth
 def create_video_onestep_api():
-    """Create video with subtitles in one step"""
+    """
+    Unified intelligent video creation endpoint
+    Handles all 4 scenarios based on effects and subtitle parameters:
+    1. Baseline: No effects, no subtitles -> create_basic_video
+    2. Subtitles Only: No effects, with subtitles -> create_basic_video + add_subtitles
+    3. Effects Only: With effects, no subtitles -> merge_audio_image
+    4. Full Featured: With effects and subtitles -> merge_audio_image + add_subtitles
+    """
     try:
         data = request.get_json()
         if not data:
@@ -87,35 +198,114 @@ def create_video_onestep_api():
         # Process input files
         input_image = save_input_file(data.get('input_image'), work_dir, 'input.png')
         input_audio = save_input_file(data.get('input_audio'), work_dir, 'input.mp3')
-        subtitle_path = save_input_file(data.get('subtitle_path'), work_dir, 'subtitle.srt') if data.get('subtitle_path') else None
-        watermark_path = save_input_file(data.get('watermark_path'), work_dir, 'watermark.png') if data.get('watermark_path') else None
+        subtitle_path = save_input_file(data.get('subtitle'), work_dir, 'subtitle.srt') if data.get('subtitle') else None
+        watermark_path = save_input_file(data.get('watermark'), work_dir, 'watermark.png') if data.get('watermark') else None
         
         # Generate unique file ID
         file_id = str(uuid.uuid4())
         output_filename = f"{file_id}.mp4"
-        temp_output = os.path.join(work_dir, "output.mp4")
+        
+        # Determine processing path based on parameters
+        effects = data.get('effects', [])
+        has_effects = bool(effects)
+        has_subtitles = bool(subtitle_path)
+        
+        app.logger.info(f"Processing request - Effects: {has_effects}, Subtitles: {has_subtitles}")
+        
+        # Step 1: Create base video (with or without effects)
+        base_video_path = os.path.join(work_dir, "base_video.mp4")
+        
+        if has_effects:
+            # Use merge_audio_image for effects
+            app.logger.info("Using merge_audio_image_to_video_with_effects for zoom/pan effects")
+            success, result = merge_audio_image_to_video_with_effects(
+                input_mp3=input_audio,
+                input_image=input_image,
+                output_video=base_video_path,
+                effects=effects,
+                watermark_path=watermark_path
+            )
+            
+            if not success:
+                shutil.rmtree(work_dir)
+                return jsonify({"error": f"Video creation with effects failed: {result}"}), 500
+                
+            # The result is the actual output path
+            if result != base_video_path:
+                base_video_path = result
+                
+        else:
+            # Use basic video creation (no effects) - using the existing function but without effects
+            app.logger.info("Creating basic video without effects")
+            success = create_video_with_subtitles_onestep(
+                input_image=input_image,
+                input_audio=input_audio,
+                subtitle_path=None,  # No subtitles in first step
+                output_video=base_video_path,
+                font_size=None,
+                outline_color=None,
+                background_box=False,
+                background_opacity=0,
+                language='english',
+                is_portrait=False,
+                effects=None,  # No effects
+                watermark_path=watermark_path,
+                progress_callback=lambda msg: app.logger.debug(f"Progress: {msg}")
+            )
+            
+            if not success:
+                shutil.rmtree(work_dir)
+                return jsonify({"error": "Basic video creation failed"}), 500
+        
+        # Step 2: Add subtitles if requested
         final_output = os.path.join(OUTPUT_DIR, output_filename)
         
-        # Call core function
-        success = create_video_with_subtitles_onestep(
-            input_image=input_image,
-            input_audio=input_audio,
-            subtitle_path=subtitle_path,
-            output_video=temp_output,
-            font_size=data.get('font_size'),
-            outline_color=data.get('outline_color', "&H00000000"),
-            background_box=data.get('background_box', True),
-            background_opacity=data.get('background_opacity', 0.5),
-            language=data.get('language', 'english'),
-            is_portrait=data.get('is_portrait', False),
-            effects=data.get('effects'),
-            watermark_path=watermark_path,
-            progress_callback=lambda msg: app.logger.debug(f"Progress: {msg}")
-        )
+        if has_subtitles:
+            app.logger.info("Adding subtitles to video")
+            
+            # Detect video orientation
+            is_portrait = data.get('is_portrait')
+            if is_portrait is None:
+                # Auto-detect orientation
+                is_portrait = detect_video_orientation(base_video_path)
+                app.logger.info(f"Auto-detected video orientation - Portrait: {is_portrait}")
+            
+            # Choose appropriate subtitle function
+            if is_portrait:
+                app.logger.info("Using add_subtitles_to_video_portrait for portrait video")
+                success = add_subtitles_to_video_portrait(
+                    input_video_path=base_video_path,
+                    subtitle_path=subtitle_path,
+                    output_video_path=final_output,
+                    font_size=data.get('font_size'),
+                    outline_color=data.get('outline_color', "&H00000000"),
+                    background_box=data.get('background_box', True),
+                    background_opacity=data.get('background_opacity', 0.7),
+                    language=data.get('language', 'chinese')
+                )
+            else:
+                app.logger.info("Using add_subtitles_to_video for landscape video")
+                success = add_subtitles_to_video(
+                    input_video_path=base_video_path,
+                    subtitle_path=subtitle_path,
+                    output_video_path=final_output,
+                    font_size=data.get('font_size'),
+                    outline_color=data.get('outline_color', "&H00000000"),
+                    background_box=data.get('background_box', True),
+                    background_opacity=data.get('background_opacity', 0.7),
+                    language=data.get('language', 'chinese')
+                )
+                
+            if not success:
+                shutil.rmtree(work_dir)
+                return jsonify({"error": "Adding subtitles failed"}), 500
+        else:
+            # No subtitles, just move the base video to final output
+            app.logger.info("No subtitles requested, using base video as final output")
+            shutil.move(base_video_path, final_output)
         
-        if success and os.path.exists(temp_output):
-            # Move to output directory
-            shutil.move(temp_output, final_output)
+        # Verify final output exists
+        if os.path.exists(final_output):
             file_size = os.path.getsize(final_output)
             
             # Store metadata
@@ -130,236 +320,39 @@ def create_video_onestep_api():
             # Clean up work directory
             shutil.rmtree(work_dir)
             
-            # Generate download URL - always use RunPod proxy format
-            pod_id = os.environ.get('RUNPOD_POD_ID')
-            download_url = f"https://{pod_id}-5000.proxy.runpod.net/download/{file_id}"
+            # Generate download endpoint path (relative)
+            # Client should prepend their API base URL
+            download_endpoint = f"/download/{file_id}"
+            
+            # Log processing summary
+            scenario = "unknown"
+            if not has_effects and not has_subtitles:
+                scenario = "baseline"
+            elif not has_effects and has_subtitles:
+                scenario = "subtitles_only"
+            elif has_effects and not has_subtitles:
+                scenario = "effects_only"
+            elif has_effects and has_subtitles:
+                scenario = "full_featured"
+                
+            app.logger.info(f"Successfully processed video - Scenario: {scenario}, Size: {file_size} bytes")
             
             return jsonify({
                 "success": True,
                 "file_id": file_id,
-                "download_url": download_url,
+                "download_endpoint": download_endpoint,
                 "filename": data.get('output_filename', 'output.mp4'),
-                "size": file_size
-            })
-        else:
-            shutil.rmtree(work_dir)
-            return jsonify({"error": "Video creation failed"}), 500
-            
-    except Exception as e:
-        app.logger.error(f"Exception in create_video_onestep: {e}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/merge_audio_image', methods=['POST'])
-def merge_audio_image_api():
-    """Merge audio and image with effects"""
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "No JSON data provided"}), 400
-        
-        # Create work directory
-        work_id = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-        work_dir = os.path.join(TEMP_DIR, work_id)
-        os.makedirs(work_dir, exist_ok=True)
-        
-        # Process input files
-        input_mp3 = save_input_file(data.get('input_mp3'), work_dir, 'input.mp3')
-        input_image = save_input_file(data.get('input_image'), work_dir, 'input.png')
-        watermark_path = save_input_file(data.get('watermark_path'), work_dir, 'watermark.png') if data.get('watermark_path') else None
-        
-        # Generate unique file ID
-        file_id = str(uuid.uuid4())
-        output_filename = f"{file_id}.mp4"
-        temp_output = os.path.join(work_dir, "output.mp4")
-        final_output = os.path.join(OUTPUT_DIR, output_filename)
-        
-        # Call core function without zoom_factor
-        success, result = merge_audio_image_to_video_with_effects(
-            input_mp3=input_mp3,
-            input_image=input_image,
-            output_video=temp_output,
-            effects=data.get('effects', ["zoom_in", "zoom_out"]),
-            watermark_path=watermark_path
-        )
-        
-        if success and os.path.exists(result):
-            # Move to output directory
-            shutil.move(result, final_output)
-            file_size = os.path.getsize(final_output)
-            
-            # Store metadata
-            file_metadata[file_id] = {
-                "filename": output_filename,
-                "original_name": data.get('output_filename', 'output.mp4'),
                 "size": file_size,
-                "created_at": datetime.now(),
-                "expires_at": datetime.now() + timedelta(hours=1)
-            }
-            
-            # Clean up
-            shutil.rmtree(work_dir)
-            
-            # Generate download URL - always use RunPod proxy format
-            pod_id = os.environ.get('RUNPOD_POD_ID')
-            download_url = f"https://{pod_id}-5000.proxy.runpod.net/download/{file_id}"
-            
-            return jsonify({
-                "success": True,
-                "file_id": file_id,
-                "download_url": download_url,
-                "filename": data.get('output_filename', 'output.mp4'),
-                "size": file_size
+                "scenario": scenario
             })
         else:
             shutil.rmtree(work_dir)
-            return jsonify({"error": f"Merge failed: {result}"}), 500
+            return jsonify({"error": "Final video file not found"}), 500
             
     except Exception as e:
-        app.logger.error(f"Exception in merge_audio_image: {e}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/add_subtitles', methods=['POST'])
-def add_subtitles_api():
-    """Add subtitles to video"""
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "No JSON data provided"}), 400
-        
-        # Create work directory
-        work_id = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-        work_dir = os.path.join(TEMP_DIR, work_id)
-        os.makedirs(work_dir, exist_ok=True)
-        
-        # Process input files
-        input_video = save_input_file(data.get('input_video'), work_dir, 'input.mp4')
-        subtitle_path = save_input_file(data.get('subtitle_path'), work_dir, 'subtitle.srt')
-        watermark_path = save_input_file(data.get('watermark_path'), work_dir, 'watermark.png') if data.get('watermark_path') else None
-        
-        # Generate unique file ID
-        file_id = str(uuid.uuid4())
-        output_filename = f"{file_id}.mp4"
-        temp_output = os.path.join(work_dir, "output.mp4")
-        final_output = os.path.join(OUTPUT_DIR, output_filename)
-        
-        # Call core function
-        success = add_subtitles_to_video(
-            input_video_path=input_video,
-            subtitle_path=subtitle_path,
-            output_video_path=temp_output,
-            font_size=data.get('font_size'),
-            outline_color=data.get('outline_color', "&H00000000"),
-            background_box=data.get('background_box', True),
-            background_opacity=data.get('background_opacity', 0.5),
-            language=data.get('language', 'english')
-        )
-        
-        if success and os.path.exists(temp_output):
-            # Move to output directory
-            shutil.move(temp_output, final_output)
-            file_size = os.path.getsize(final_output)
-            
-            # Store metadata
-            file_metadata[file_id] = {
-                "filename": output_filename,
-                "original_name": data.get('output_filename', 'output.mp4'),
-                "size": file_size,
-                "created_at": datetime.now(),
-                "expires_at": datetime.now() + timedelta(hours=1)
-            }
-            
-            # Clean up
+        app.logger.error(f"Exception in unified create_video_onestep: {e}", exc_info=True)
+        if 'work_dir' in locals() and os.path.exists(work_dir):
             shutil.rmtree(work_dir)
-            
-            # Generate download URL - always use RunPod proxy format
-            pod_id = os.environ.get('RUNPOD_POD_ID')
-            download_url = f"https://{pod_id}-5000.proxy.runpod.net/download/{file_id}"
-            
-            return jsonify({
-                "success": True,
-                "file_id": file_id,
-                "download_url": download_url,
-                "filename": data.get('output_filename', 'output.mp4'),
-                "size": file_size
-            })
-        else:
-            shutil.rmtree(work_dir)
-            return jsonify({"error": "Adding subtitles failed"}), 500
-            
-    except Exception as e:
-        app.logger.error(f"Exception in add_subtitles: {e}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/add_subtitles_portrait', methods=['POST'])
-def add_subtitles_portrait_api():
-    """Add subtitles to portrait video"""
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "No JSON data provided"}), 400
-        
-        # Create work directory
-        work_id = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-        work_dir = os.path.join(TEMP_DIR, work_id)
-        os.makedirs(work_dir, exist_ok=True)
-        
-        # Process input files
-        input_video = save_input_file(data.get('input_video'), work_dir, 'input.mp4')
-        subtitle_path = save_input_file(data.get('subtitle_path'), work_dir, 'subtitle.srt')
-        watermark_path = save_input_file(data.get('watermark_path'), work_dir, 'watermark.png') if data.get('watermark_path') else None
-        
-        # Generate unique file ID
-        file_id = str(uuid.uuid4())
-        output_filename = f"{file_id}.mp4"
-        temp_output = os.path.join(work_dir, "output.mp4")
-        final_output = os.path.join(OUTPUT_DIR, output_filename)
-        
-        # Call core function
-        success = add_subtitles_to_video_portrait(
-            input_video_path=input_video,
-            subtitle_path=subtitle_path,
-            output_video_path=temp_output,
-            font_size=data.get('font_size'),
-            outline_color=data.get('outline_color', "&H00000000"),
-            background_box=data.get('background_box', True),
-            background_opacity=data.get('background_opacity', 0.5),
-            language=data.get('language', 'english')
-        )
-        
-        if success and os.path.exists(temp_output):
-            # Move to output directory
-            shutil.move(temp_output, final_output)
-            file_size = os.path.getsize(final_output)
-            
-            # Store metadata
-            file_metadata[file_id] = {
-                "filename": output_filename,
-                "original_name": data.get('output_filename', 'output.mp4'),
-                "size": file_size,
-                "created_at": datetime.now(),
-                "expires_at": datetime.now() + timedelta(hours=1)
-            }
-            
-            # Clean up
-            shutil.rmtree(work_dir)
-            
-            # Generate download URL - always use RunPod proxy format
-            pod_id = os.environ.get('RUNPOD_POD_ID')
-            download_url = f"https://{pod_id}-5000.proxy.runpod.net/download/{file_id}"
-            
-            return jsonify({
-                "success": True,
-                "file_id": file_id,
-                "download_url": download_url,
-                "filename": data.get('output_filename', 'output.mp4'),
-                "size": file_size
-            })
-        else:
-            shutil.rmtree(work_dir)
-            return jsonify({"error": "Adding subtitles failed"}), 500
-            
-    except Exception as e:
-        app.logger.error(f"Exception in add_subtitles_portrait: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
 @app.route('/download/<file_id>')
@@ -416,26 +409,6 @@ def cleanup_expired_files():
         "active_files": len(file_metadata)
     })
 
-def save_input_file(data, work_dir, filename):
-    """Save base64 encoded data or file path to disk"""
-    if not data:
-        raise ValueError(f"No data provided for {filename}")
-    
-    file_path = os.path.join(work_dir, filename)
-    
-    # If it's a file path
-    if isinstance(data, str) and os.path.exists(data):
-        shutil.copy(data, file_path)
-    else:
-        # Assume it's base64 encoded
-        try:
-            decoded_data = base64.b64decode(data)
-            with open(file_path, 'wb') as f:
-                f.write(decoded_data)
-        except Exception as e:
-            raise ValueError(f"Failed to decode base64 data for {filename}: {e}")
-    
-    return file_path
 
 if __name__ == '__main__':
     import logging
@@ -447,9 +420,6 @@ if __name__ == '__main__':
     print("Available endpoints:")
     print("- GET  /health")
     print("- POST /create_video_onestep")
-    print("- POST /merge_audio_image")
-    print("- POST /add_subtitles")
-    print("- POST /add_subtitles_portrait")
     print("- GET  /download/<file_id>")
     print("- GET  /cleanup")
     print("\n")
