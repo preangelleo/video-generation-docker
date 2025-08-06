@@ -325,6 +325,10 @@ def create_video_onestep_api():
             download_endpoint = f"/download/{file_id}"
             
             # Log processing summary
+            # Recalculate for scenario detection
+            has_effects = bool(data.get('effects', []))
+            has_subtitles = bool(data.get('subtitle'))
+            
             scenario = "unknown"
             if not has_effects and not has_subtitles:
                 scenario = "baseline"

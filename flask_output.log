@@ -1,0 +1,28 @@
+/Users/lgg/anaconda3/envs/sa/lib/python3.9/site-packages/imageio_ffmpeg/_utils.py:7: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import resource_filename
+
+Starting Fixed Video Processing API on port 5000
+Available endpoints:
+- GET  /health
+- POST /create_video_onestep
+- GET  /download/<file_id>
+- GET  /cleanup
+
+
+ * Serving Flask app 'app'
+ * Debug mode: off
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.31.88:5000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug:127.0.0.1 - - [06/Aug/2025 18:24:45] "GET /health HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [06/Aug/2025 18:25:05] "GET /health HTTP/1.1" 200 -
+INFO:app:Processing request - Effects: True, Subtitles: True
+INFO:app:Using merge_audio_image_to_video_with_effects for zoom/pan effects
+INFO:app:Adding subtitles to video
+INFO:app:Video dimensions: 1336x752, portrait: False
+INFO:app:Auto-detected video orientation - Portrait: False
+INFO:app:Using add_subtitles_to_video for landscape video
+INFO:app:Successfully processed video - Scenario: full_featured, Size: 2560922 bytes
+INFO:werkzeug:127.0.0.1 - - [06/Aug/2025 18:25:30] "POST /create_video_onestep HTTP/1.1" 200 -
