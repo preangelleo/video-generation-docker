@@ -35,6 +35,18 @@ docker run -d -p 5000:5000 --name video-api betashow/video-generation-api:latest
 curl http://localhost:5000/health
 ```
 
+## 🚀 想在 AWS 上部署这个服务？
+
+看看我的第二个开源项目：**[CloudBurst](https://github.com/preangelleo/cloudburst)**
+
+CloudBurst 帮助您在 AWS 上部署这个视频生成 API，特点：
+- ⚡ **按需实例** - 用时才付费
+- 💰 **节省 96% 成本** - 相比 24/7 GPU 实例
+- 🔄 **全自动化** - 创建 → 部署 → 处理 → 终止
+- 📊 **实时成本追踪** - 清楚知道花了多少钱
+
+适合偶尔需要生成视频但不想维护昂贵基础设施的生产场景。
+
 ## API 使用示例
 
 ### 创建视频（统一接口）

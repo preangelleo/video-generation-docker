@@ -21,6 +21,18 @@ docker run -d \
 
 The API will be available at `http://localhost:5000`
 
+## 🚀 Want to Deploy This on AWS?
+
+Check out my second open source project: **[CloudBurst](https://github.com/preangelleo/cloudburst)**
+
+CloudBurst helps you deploy this Video Generation API on AWS with:
+- ⚡ **On-demand instances** - Pay only when you need it
+- 💰 **96% cost savings** - Compared to 24/7 GPU instances
+- 🔄 **Fully automated** - Create → Deploy → Process → Terminate
+- 📊 **Real-time cost tracking** - Know exactly what you're paying
+
+Perfect for production use cases where you need to generate videos occasionally but don't want to maintain expensive infrastructure.
+
 ## 📖 API Documentation
 
 ### Core Endpoint: `/create_video_onestep`
