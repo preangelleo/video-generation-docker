@@ -196,6 +196,7 @@ def create_video_onestep_api():
         os.makedirs(work_dir, exist_ok=True)
         
         # Process input files
+        is_portrait = data.get('is_portrait')
         input_image = save_input_file(data.get('input_image'), work_dir, 'input.png')
         input_audio = save_input_file(data.get('input_audio'), work_dir, 'input.mp3')
         subtitle_path = save_input_file(data.get('subtitle'), work_dir, 'subtitle.srt') if data.get('subtitle') else None
@@ -247,7 +248,7 @@ def create_video_onestep_api():
                 background_box=False,
                 background_opacity=0,
                 language='english',
-                is_portrait=False,
+                is_portrait=is_portrait,
                 effects=None,  # No effects
                 watermark_path=watermark_path,
                 progress_callback=lambda msg: app.logger.debug(f"Progress: {msg}")
@@ -264,7 +265,7 @@ def create_video_onestep_api():
             app.logger.info("Adding subtitles to video")
             
             # Detect video orientation
-            is_portrait = data.get('is_portrait')
+            
             if is_portrait is None:
                 # Auto-detect orientation
                 is_portrait = detect_video_orientation(base_video_path)
@@ -280,7 +281,7 @@ def create_video_onestep_api():
                     font_size=data.get('font_size'),
                     outline_color=data.get('outline_color', "&H00000000"),
                     background_box=data.get('background_box', True),
-                    background_opacity=data.get('background_opacity', 0.7),
+                    background_opacity=data.get('background_opacity', 0.2),
                     language=data.get('language', 'chinese')
                 )
             else:
@@ -292,7 +293,7 @@ def create_video_onestep_api():
                     font_size=data.get('font_size'),
                     outline_color=data.get('outline_color', "&H00000000"),
                     background_box=data.get('background_box', True),
-                    background_opacity=data.get('background_opacity', 0.7),
+                    background_opacity=data.get('background_opacity', 0.2),
                     language=data.get('language', 'chinese')
                 )
                 

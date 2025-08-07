@@ -61,7 +61,7 @@ A single intelligent endpoint that automatically handles all video creation scen
 | `effects` | array | No | Effects to apply. Available: `"zoom_in"`, `"zoom_out"`, `"pan_left"`, `"pan_right"`, `"random"` |
 | `language` | string | No | Subtitle language: `"chinese"` or `"english"` (default: chinese) |
 | `background_box` | boolean | No | Show subtitle background (default: true) |
-| `background_opacity` | float | No | Subtitle background opacity 0-1 (default: 0.7) |
+| `background_opacity` | float | No | Subtitle background transparency 0-1 (default: 0.2) **[See important note below](#subtitle-background-transparency)** |
 | `font_size` | integer | No | Subtitle font size in pixels (default: auto-calculated based on video size) |
 | `outline_color` | string | No | Subtitle outline color in ASS format (default: "&H00000000" - black) |
 | `is_portrait` | boolean | No | Force portrait orientation (default: auto-detect) |
@@ -135,7 +135,7 @@ response = requests.post('http://localhost:5000/create_video_onestep',
         'subtitle': subtitle_b64,
         'language': 'chinese',
         'background_box': True,
-        'background_opacity': 0.7
+        'background_opacity': 0.2
     }
 )
 ```
@@ -194,7 +194,7 @@ response = requests.post('http://localhost:5000/create_video_onestep',
         'font_size': 48,                    # Custom font size
         'outline_color': '&H00FF0000',      # Blue outline
         'background_box': True,             # Show background
-        'background_opacity': 0.8           # 80% opacity
+        'background_opacity': 0.3           # 30% transparent (dark background)
     }
 )
 ```
@@ -257,6 +257,34 @@ headers = {
 - **GPU Acceleration**: Automatic GPU detection and usage when available
 
 ## 🎨 Advanced Subtitle Styling
+
+### Subtitle Background Transparency
+
+⚠️ **IMPORTANT**: The `background_opacity` parameter controls **transparency**, not opacity!
+
+| Value | Visual Result | Description |
+|-------|--------------|-------------|
+| **0.0** | Solid black | Completely opaque background |
+| **0.2** | Dark background | **Default** - Good readability |
+| **0.5** | Semi-transparent | 50% see-through |
+| **0.7** | Very transparent | Old default - quite see-through |
+| **1.0** | No background | Completely transparent |
+
+**Examples**:
+- For **darker, more readable** subtitles: Use **lower** values (0.0 - 0.3)
+- For **more transparent** subtitles: Use **higher** values (0.5 - 1.0)
+- Recommended: **0.2** (the new default) provides excellent readability
+
+```python
+# Dark, readable background (recommended)
+'background_opacity': 0.2
+
+# Solid black background
+'background_opacity': 0.0
+
+# Very transparent (hard to read)
+'background_opacity': 0.8
+```
 
 ### Color Format (ASS/SSA Style)
 The `outline_color` parameter uses ASS subtitle format: `&HAABBGGRR` where:
