@@ -3,7 +3,7 @@ Video Generation API
 A powerful API for intelligent video generation with professional effects and subtitles.
 """
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __author__ = "Leo Wang"
 __email__ = "preangelleo@gmail.com"
 

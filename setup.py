@@ -11,7 +11,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="video-generation-api",
-    version="1.0.0",
+    version="1.0.1",
     author="Leo Wang",
     author_email="preangelleo@gmail.com",
     description="A powerful Docker-based API for intelligent video generation with professional effects and subtitles",
