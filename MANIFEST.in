@@ -1,0 +1,14 @@
+include README.md
+include README_CN.md
+include LICENSE
+include requirements.txt
+include Dockerfile
+include DOCKER_BUILD_CAUTIONS.md
+recursive-exclude * __pycache__
+recursive-exclude * *.pyc
+recursive-exclude * *.pyo
+recursive-exclude * *.orig
+recursive-exclude outputs *
+recursive-exclude temp *
+recursive-exclude flask_output.log *
+recursive-exclude server.log *

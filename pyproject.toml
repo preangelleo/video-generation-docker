@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools-scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "video-generation-api"
+authors = [{name = "Leo Wang", email = "preangelleo@gmail.com"}]
+description = "A powerful Docker-based API for intelligent video generation with professional effects and subtitles"
+readme = "README.md"
+requires-python = ">=3.8"
+keywords = ["video", "generation", "api", "docker", "flask", "moviepy", "ffmpeg", "subtitles", "effects", "animation"]
+license = {text = "MIT"}
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Topic :: Multimedia :: Video",
+    "Topic :: Multimedia :: Video :: Conversion",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+dynamic = ["version", "dependencies"]
+
+[project.urls]
+homepage = "https://github.com/preangelleo/video-generation-docker"
+documentation = "https://github.com/preangelleo/video-generation-docker#readme"
+repository = "https://github.com/preangelleo/video-generation-docker"
+issues = "https://github.com/preangelleo/video-generation-docker/issues"
+
+[project.scripts]
+video-generation-api = "video_generation_api.app:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=22.0.0",
+    "flake8>=6.0.0",
+]
+
+[tool.setuptools]
+packages = ["video_generation_api"]
+
+[tool.setuptools.dynamic]
+version = {attr = "video_generation_api.__version__"}
+dependencies = {file = ["requirements.txt"]}

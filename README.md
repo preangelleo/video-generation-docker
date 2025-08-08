@@ -1,12 +1,18 @@
 # Video Generation API v1.0
 
-[中文版](./README_CN.md)
+[中文版](https://github.com/preangelleo/video-generation-docker/blob/main/README_CN.md) | [PyPI](https://pypi.org/project/video-generation-api/)
 
 🎬 A powerful Docker-based API for intelligent video generation with professional effects and subtitles.
 
-## 🚀 Quick Start
+## 📦 Installation
 
-### Pull and Run
+### Option 1: Install from PyPI (Recommended for Python users)
+
+```bash
+pip install video-generation-api
+```
+
+### Option 2: Docker (Recommended for production)
 
 ```bash
 # Pull the Docker image
@@ -19,19 +25,50 @@ docker run -d \
   betashow/video-generation-api:latest
 ```
 
-The API will be available at `http://localhost:5000`
+## 🚀 Quick Start
+
+### Python Client (if installed via pip)
+
+```python
+from video_generation_api import VideoGenerationClient
+
+# Initialize client
+client = VideoGenerationClient("http://localhost:5000")
+
+# Create video
+result = client.create_video(
+    image_path="image.jpg",
+    audio_path="audio.mp3",
+    subtitle_path="subtitles.srt",
+    effects=["zoom_in"],
+    output_path="output.mp4"
+)
+```
+
+### API Server
+
+If using Docker, the API will be available at `http://localhost:5000`.
+
+If installed via pip, start the server with:
+
+```bash
+video-generation-api
+```
 
 ## 🚀 Want to Deploy This on AWS?
 
-Check out my second open source project: **[CloudBurst](https://github.com/preangelleo/cloudburst)**
+Check out our recommended deployment solution: **[CloudBurst Fargate](https://github.com/preangelleo/cloudburst-fargate)**
 
-CloudBurst helps you deploy this Video Generation API on AWS with:
-- ⚡ **On-demand instances** - Pay only when you need it
-- 💰 **96% cost savings** - Compared to 24/7 GPU instances
-- 🔄 **Fully automated** - Create → Deploy → Process → Terminate
-- 📊 **Real-time cost tracking** - Know exactly what you're paying
+CloudBurst Fargate is the next generation of our CloudBurst project, offering serverless deployment on AWS:
+- 🚀 **Serverless Architecture** - No servers to manage
+- 💰 **Pay Per Second** - Only pay for actual processing time
+- ⚡ **Auto-scaling** - Handle any workload automatically
+- 🔧 **Zero Maintenance** - AWS manages all infrastructure
+- 📊 **Better Cost Efficiency** - More efficient than EC2 instances
 
-Perfect for production use cases where you need to generate videos occasionally but don't want to maintain expensive infrastructure.
+For legacy EC2 instance deployment, see the original [CloudBurst](https://github.com/preangelleo/cloudburst) project.
+
+Perfect for production use cases where you need to generate videos on-demand without managing servers.
 
 ## 📖 API Documentation
 
